@@ -5,6 +5,7 @@ from typing import Generator, Optional, Tuple
 
 import pandas as pd
 
+from utils import total_size
 
 title_id_columns = ["Title", "Publisher", "Publisher_ID", "Platform", "Item_ID"]
 
@@ -111,11 +112,12 @@ if __name__ == "__main__":
     with open(args.filename, "r") as infile:
         data = json.load(infile)
     orig_size = len(json.dumps(data))
+    orig_mem = total_size(data)
 
     header, df = reader.json_to_header_and_df(data)
     #print(df.shape, file=sys.stderr)
 
-    new_items = df_to_items(df, ["YOP", "Access_Type"])
+    new_items = df_to_items(df, ["YOP", "Access_Type", "Access_Method"])
 
     out = {'Report_Header': header, 'Report_Items': new_items}
     dump = json.dumps(out, ensure_ascii=False)
@@ -123,4 +125,8 @@ if __name__ == "__main__":
 
     ratio = 100 * len(dump) / orig_size
     print(f'Unindented sizes: orig: {orig_size}, new: {len(dump)} ({ratio:.2f} %)', file=sys.stderr)
+
+    new_mem = total_size(out)
+    ratio_mem = 100 * new_mem / orig_mem
+    print(f'Memory size     : orig: {orig_mem}, new: {new_mem} ({ratio_mem:.2f} %)', file=sys.stderr)
 
