@@ -26,25 +26,6 @@ class C5Reader:
     def __init__(self):
         pass
 
-    @classmethod
-    def create_df(cls, data):
-        return pd.DataFrame(
-            columns=[
-                "Title",
-                "Publisher",
-                "Platform",
-                "Item_ID",
-                "YOP",
-                "Access_Type",
-                "Access_Method",
-                "Data_Type",
-                "Begin_Date",
-                "End_Date",
-                "Metric_Type",
-                "Count",
-            ],
-        )
-
     def json_to_header_and_df(self, data: dict) -> Tuple[dict, pd.DataFrame]:
         records = []
         items = data.get("Report_Items", [])
@@ -82,11 +63,11 @@ def df_to_items(
     rollup_columns = [c for c in flat_dimension_columns if c not in expand_columns]
     group_by = ["Title", "Publisher", "Platform", *rollup_columns]
     items = []
-    for key, grp in df.groupby(group_by):
+    for key, grp in df.groupby(group_by, dropna=False):
         item = {k: grp.iloc[0][k] for k in title_id_columns + rollup_columns}
         perf = []
         if not date_merge:
-            for (start, end), recs in grp.groupby(["Begin_Date", "End_Date"]):
+            for (start, end), recs in grp.groupby(["Begin_Date", "End_Date"], dropna=False):
                 perf_groups = []
                 perf_rec = {
                     "Period": {
@@ -96,7 +77,7 @@ def df_to_items(
                     "Groups": perf_groups,
                 }
                 perf.append(perf_rec)
-                for subgroup_key, subgrp in recs.groupby(expand_columns):
+                for subgroup_key, subgrp in recs.groupby(expand_columns, dropna=False):
                     perf_groups.append(
                         {
                             "Attrs": {k: subgrp.iloc[0][k] for k in expand_columns},
@@ -108,14 +89,14 @@ def df_to_items(
                     )
         else:
             # date_merge is True => we store performance/metric in one object for all months
-            for subgroup_key, subgrp in grp.groupby(expand_columns):
+            for subgroup_key, subgrp in grp.groupby(expand_columns, dropna=False):
                 metrics = {}
                 perf_rec = {
                     "Attrs": {k: subgrp.iloc[0][k] for k in expand_columns},
                     "Metrics": metrics,
                 }
                 perf.append(perf_rec)
-                for metric, recs in subgrp.groupby(["Metric_Type"]):
+                for metric, recs in subgrp.groupby(["Metric_Type"], dropna=False):
                     metrics[metric] = {
                         rec["Begin_Date"]: rec["Count"] for _, rec in recs.iterrows()
                     }
