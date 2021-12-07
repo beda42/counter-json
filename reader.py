@@ -45,67 +45,74 @@ class C5Reader:
                 yield {**instance, **date_base, **base}
 
 
-class CounterFile:
-    def __init__(
-        self,
-        fname: str,
-        header: Optional[dict] = None,
-        df: Optional[pd.DataFrame] = None,
-    ):
-        self.fname = fname
-        self.header = header or {}
-        self.df = df
+expand_columns = ["YOP", "Access_Type", "Access_Method", "Section_Type"]
 
 
-def df_to_items(
-    df: pd.DataFrame, expand_columns: [str], date_merge: bool = False
-) -> [dict]:
+def c_avoid_duplicate_metadata(df: pd.DataFrame) -> [dict]:
+    """
+    Merges all records related to one title into one Report_Item; more efficiently stores metric
+    values
+    """
     rollup_columns = [c for c in flat_dimension_columns if c not in expand_columns]
     group_by = ["Title", "Publisher", "Platform", *rollup_columns]
     items = []
     for key, grp in df.groupby(group_by, dropna=False):
         item = {k: grp.iloc[0][k] for k in title_id_columns + rollup_columns}
         perf = []
-        if not date_merge:
-            for (start, end), recs in grp.groupby(["Begin_Date", "End_Date"], dropna=False):
-                perf_groups = []
-                perf_rec = {
-                    "Period": {
-                        "Begin_Date": start,
-                        "End_Date": end,
-                    },
-                    "Groups": perf_groups,
-                }
-                perf.append(perf_rec)
-                for subgroup_key, subgrp in recs.groupby(expand_columns, dropna=False):
-                    perf_groups.append(
-                        {
-                            "Attrs": {k: subgrp.iloc[0][k] for k in expand_columns},
-                            "Metrics": {
-                                rec["Metric_Type"]: rec["Count"]
-                                for _, rec in subgrp.iterrows()
-                            },
-                        }
-                    )
-        else:
-            # date_merge is True => we store performance/metric in one object for all months
-            for subgroup_key, subgrp in grp.groupby(expand_columns, dropna=False):
-                metrics = {}
-                perf_rec = {
-                    "Attrs": {k: subgrp.iloc[0][k] for k in expand_columns},
-                    "Metrics": metrics,
-                }
-                perf.append(perf_rec)
-                for metric, recs in subgrp.groupby(["Metric_Type"], dropna=False):
-                    metrics[metric] = {
-                        rec["Begin_Date"]: rec["Count"] for _, rec in recs.iterrows()
+        for (start, end), recs in grp.groupby(["Begin_Date", "End_Date"], dropna=False):
+            perf_groups = []
+            perf_rec = {
+                "Period": {
+                    "Begin_Date": start,
+                    "End_Date": end,
+                },
+                "Groups": perf_groups,
+            }
+            perf.append(perf_rec)
+            for subgroup_key, subgrp in recs.groupby(expand_columns, dropna=False):
+                perf_groups.append(
+                    {
+                        "Attrs": {k: subgrp.iloc[0][k] for k in expand_columns},
+                        "Metrics": {
+                            rec["Metric_Type"]: rec["Count"]
+                            for _, rec in subgrp.iterrows()
+                        },
                     }
+                )
+        item["Performance"] = perf
+        items.append(item)
+    return items
+
+
+def c_simplify_performance(df: pd.DataFrame) -> [dict]:
+    """
+    Merges all records related to one title into one Report_Item; more efficiently stores metric
+    values + usage for one metric for all months is stored in one object
+    """
+    rollup_columns = [c for c in flat_dimension_columns if c not in expand_columns]
+    group_by = ["Title", "Publisher", "Platform", *rollup_columns]
+    items = []
+    for key, grp in df.groupby(group_by, dropna=False):
+        item = {k: grp.iloc[0][k] for k in title_id_columns + rollup_columns}
+        perf = []
+        for subgroup_key, subgrp in grp.groupby(expand_columns, dropna=False):
+            metrics = {}
+            perf_rec = {
+                "Attrs": {k: subgrp.iloc[0][k] for k in expand_columns},
+                "Metrics": metrics,
+            }
+            perf.append(perf_rec)
+            for metric, recs in subgrp.groupby(["Metric_Type"], dropna=False):
+                metrics[metric] = {
+                    rec["Begin_Date"]: rec["Count"] for _, rec in recs.iterrows()
+                }
 
         item["Performance"] = perf
         items.append(item)
     return items
 
-def process_one_file(filename: str, date_merge: bool =False, stdout:bool=False):
+
+def process_one_file(filename: str, converter, stdout: bool = False):
     reader = C5Reader()
     with open(filename, "r") as infile:
         data = json.load(infile)
@@ -113,13 +120,9 @@ def process_one_file(filename: str, date_merge: bool =False, stdout:bool=False):
     orig_mem = total_size(data)
 
     header, df = reader.json_to_header_and_df(data)
-    months = len(df['Begin_Date'].unique())
+    months = len(df["Begin_Date"].unique())
 
-    new_items = df_to_items(
-        df,
-        ["YOP", "Access_Type", "Access_Method", "Section_Type"],
-        date_merge=args.date_merge,
-    )
+    new_items = converter(df)
 
     out = {"Report_Header": header, "Report_Items": new_items}
     dump = json.dumps(out, ensure_ascii=False)
@@ -140,29 +143,54 @@ def process_one_file(filename: str, date_merge: bool =False, stdout:bool=False):
 if __name__ == "__main__":
     import argparse
 
+    converters = [(k[2:], v) for k, v in locals().items() if k.startswith('c_') and callable(v)]
+    converters.sort()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", nargs="+", help="json file to process")
     parser.add_argument(
-        "-d",
-        dest="date_merge",
-        action="store_true",
+        "-c",
+        dest="converter",
+        type=str,
+        choices=[c[0] for c in converters],
         help="Merge data for different months into one object",
     )
     parser.add_argument(
-        "-c", dest="stdout", action="store_true", help="Output converted file to stdout"
+        "-o", dest="stdout", action="store_true", help="Output converted file to stdout"
+    )
+    parser.add_argument(
+        "-j",
+        dest="process_number",
+        default=2,
+        type=int,
+        help="Number of parallel processes to start = number of input files processed in parallel.",
     )
 
     args = parser.parse_args()
 
     print(
-        "File           | Months |    Size orig |     Size new |   Size ratio |  Memory orig |   Memory new | Memory ratio",
+        f"Will use up to {args.process_number} parallel processes. Use -j to change that.\n",
+        file=sys.stderr,
+    )
+
+    print(
+        "File           | Months |    Size orig |     Size new |   Size ratio |  Memory orig |   "
+        "Memory new | Memory ratio",
         file=sys.stderr,
     )
 
     futures = set()
-    process_pool = ProcessPoolExecutor(max_workers=6)
+    process_pool = ProcessPoolExecutor(max_workers=args.process_number)
+    convert_fn = dict(converters)[args.converter]
     for filename in args.filename:
-        futures.add(process_pool.submit(process_one_file, filename, date_merge=args.date_merge, stdout=args.stdout))
+        futures.add(
+            process_pool.submit(
+                process_one_file,
+                filename,
+                convert_fn,
+                stdout=args.stdout,
+            )
+        )
     done = set()
     while futures or done:
         done, futures = wait(futures, timeout=1)
