@@ -10,11 +10,33 @@ It reads COUNTER 5 TR master reports,
 Usage
 =====
 
-Most basic usage:
+Basic usage:
 
->>> python reader.py report.json
+>>> python converter.py -c simplify_performance data/TR_1mo_tiny.json
 
+The program will process each JSON file given on the command line and print out statistics
+about the file size and memory consumption of each file.
 
+The ``-c`` argument selects the converter to use. At present there are two:
+
+avoid_duplicate_metadata
+    Merges all usage related to one title into one ``Report_Item``. Also simplifies the was
+    performance is stored. Converts: ``[{"Metric": "M1", "Count": 5}]`` to ``{"M1": 5}``
+
+simplify_performance
+    Does the same as `avoid_duplicate_metadata`_, but also moves date inside the metric record,
+    so the result looks like ``{"M1": {"2020-01-01": 5}}`` and the ``Period`` record is removed.
+
+By default the program uses two parallel processes, so it processes two input files in parallel.
+If you have more cores and enough memory, you can raise this by using the ``-j`` switch like
+``-j8`` or ``-j1`` for single-process operation.
+
+If you would like to see the converted output of the JSON report, you can use the ``-o`` switch.
+It will cause the program to print out the new JSON output onto stdout where you can redirect it
+into a file. Please note that this output will be indented for better human readability and the
+file size will thus differ from that used in the printed statistics. Also note that for multiple
+input file all the output will be printed to stdout so it may be hard to untangle individual
+outputs. Because of this ``-o`` is mostly useful when one file is processed.
 
 
 Limitations
