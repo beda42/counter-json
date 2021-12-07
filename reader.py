@@ -1,8 +1,7 @@
 import json
 import sys
 from concurrent.futures import ProcessPoolExecutor, wait
-from pprint import pprint
-from typing import Generator, Optional, Tuple
+from typing import Generator, Tuple
 
 import pandas as pd
 
@@ -153,6 +152,7 @@ if __name__ == "__main__":
         dest="converter",
         type=str,
         choices=[c[0] for c in converters],
+        required=True,
         help="Merge data for different months into one object",
     )
     parser.add_argument(
