@@ -1,0 +1,145 @@
+{
+  "Report_Header": {
+    "Created": "2019-12-06T01:23:50Z",
+    "Created_By": "ProQuest Ebook Central",
+    "Customer_ID": "hidden",
+    "Report_ID": "TR",
+    "Release": "5",
+    "Report_Name": "Title Master Report",
+    "Institution_Name": "Hidden",
+    "Institution_ID": [
+      {
+        "Type": "Proprietary",
+        "Value": "EBC:hidden"
+      }
+    ],
+    "Report_Filters": [
+      {
+        "Name": "Platform",
+        "Value": "ProQuest Ebook Central"
+      },
+      {
+        "Name": "Begin_Date",
+        "Value": "2019-11-01"
+      },
+      {
+        "Name": "End_Date",
+        "Value": "2019-11-30"
+      },
+      {
+        "Name": "Access_Method",
+        "Value": "Regular"
+      },
+      {
+        "Name": "Data_Type",
+        "Value": "Book"
+      },
+      {
+        "Name": "Access_Type",
+        "Value": "Controlled"
+      }
+    ],
+    "Report_Attributes": [
+      {
+        "Name": "Attributes_To_Show",
+        "Value": "Access_Method|Data_Type|Access_Type|YOP"
+      }
+    ]
+  },
+  "Report_Items": [
+    {
+      "Title": "Food Over Medicine : The Conversation That Could Save Your Life",
+      "Publisher": "BenBella Books, Inc.",
+      "Publisher_ID": null,
+      "Platform": "ProQuest Ebook Central",
+      "Item_ID": [
+        {
+          "Type": "Proprietary",
+          "Value": "EBC:1011630"
+        },
+        {
+          "Type": "ISBN",
+          "Value": "978-1-937856-80-9"
+        }
+      ],
+      "Data_Type": "Book",
+      "Performance": [
+        {
+          "Attrs": {
+            "YOP": "2014",
+            "Access_Type": "Controlled",
+            "Access_Method": "Regular",
+            "Section_Type": null
+          },
+          "Metrics": {
+            "Total_Item_Investigations": {
+              "2019-11-01": 1
+            },
+            "Total_Item_Requests": {
+              "2019-11-01": 1
+            },
+            "Unique_Item_Investigations": {
+              "2019-11-01": 1
+            },
+            "Unique_Title_Investigations": {
+              "2019-11-01": 1
+            },
+            "Unique_Title_Requests": {
+              "2019-11-01": 1
+            }
+          }
+        },
+        {
+          "Attrs": {
+            "YOP": "2014",
+            "Access_Type": "Controlled",
+            "Access_Method": "TDM",
+            "Section_Type": null
+          },
+          "Metrics": {
+            "Total_Item_Investigations": {
+              "2019-11-01": 1
+            },
+            "Total_Item_Requests": {
+              "2019-11-01": 1
+            },
+            "Unique_Item_Investigations": {
+              "2019-11-01": 1
+            },
+            "Unique_Title_Investigations": {
+              "2019-11-01": 1
+            },
+            "Unique_Title_Requests": {
+              "2019-11-01": 1
+            }
+          }
+        },
+        {
+          "Attrs": {
+            "YOP": "2014",
+            "Access_Type": "Open_Access",
+            "Access_Method": "Regular",
+            "Section_Type": null
+          },
+          "Metrics": {
+            "Total_Item_Investigations": {
+              "2019-11-01": 1
+            },
+            "Total_Item_Requests": {
+              "2019-11-01": 1
+            },
+            "Unique_Item_Investigations": {
+              "2019-11-01": 1
+            },
+            "Unique_Title_Investigations": {
+              "2019-11-01": 1
+            },
+            "Unique_Title_Requests": {
+              "2019-11-01": 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

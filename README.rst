@@ -5,27 +5,29 @@ COUNTER JSON size optimization - test converter
 This project contains a simple (and largely incomplete - see `Limitations`_) converter which
 implements a few optimizations to the COUNTER JSON format.
 
-It reads COUNTER 5 TR master reports,
+It works with COUNTER 5 TR master reports.
 
 Usage
 =====
 
 Basic usage:
 
->>> python converter.py -c simplify_performance data/TR_1mo_tiny.json
+>>> python converter.py -c simplify_performance sample-input/TR_1mo_tiny.json
 
 The program will process each JSON file given on the command line and print out statistics
 about the file size and memory consumption of each file.
 
 The ``-c`` argument selects the converter to use. At present there are two:
 
-avoid_duplicate_metadata
+``avoid_duplicate_metadata``
     Merges all usage related to one title into one ``Report_Item``. Also simplifies the was
-    performance is stored. Converts: ``[{"Metric": "M1", "Count": 5}]`` to ``{"M1": 5}``
+    performance is stored. Converts: ``[{"Metric": "M1", "Count": 5}]`` to ``{"M1": 5}``.
+    Sample output is available `here <sample-output/TR_1mo_tiny.avoid_duplicate_metadata.json>`_.
 
-simplify_performance
-    Does the same as `avoid_duplicate_metadata`_, but also moves date inside the metric record,
+``simplify_performance``
+    Does the same as ``avoid_duplicate_metadata``, but also moves date inside the metric record,
     so the result looks like ``{"M1": {"2020-01-01": 5}}`` and the ``Period`` record is removed.
+    Sample output is available `here <sample-output/TR_1mo_tiny.simplify_performance.json>`_.
 
 By default the program uses two parallel processes, so it processes two input files in parallel.
 If you have more cores and enough memory, you can raise this by using the ``-j`` switch like
@@ -54,5 +56,5 @@ Internals
 =========
 
 Internally the program parses the incoming JSON into a tabular form stored in a Pandas DataFrame.
-This representation is then used to prepare the data in the desired output format. It does not
+This representation is then used to prepare the data in the desired output format. It does so
 mainly by applying ``groupby`` in different ways ;).
