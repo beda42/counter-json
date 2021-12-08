@@ -7,6 +7,16 @@ implements a few optimizations to the COUNTER JSON format.
 
 It works with COUNTER 5 TR master reports.
 
+Installation
+============
+
+This project uses `poetry <https://python-poetry.org/>`_ for dependency management. Simply doing
+``poetry install`` inside the source directory should install all the requirements.
+
+In case you cannot or do not want to install poetry, there is also the ``requirements.txt`` file
+which can be used to install the dependencies using pip like this -
+``pip install -r requirements.txt``.
+
 Usage
 =====
 
