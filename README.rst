@@ -50,6 +50,11 @@ file size will thus differ from that used in the printed statistics. Also note t
 input file all the output will be printed to stdout so it may be hard to untangle individual
 outputs. Because of this ``-o`` is mostly useful when one file is processed.
 
+It is possible to use the ``-z`` switch to turn on `gzip` compression of the JSON data, which
+results in the original and converted file sizes being reported after compression. This makes
+it possible to evaluate the impact on network transport of the data where compression is often
+used as part of the HTTP protocol.
+
 
 Limitations
 ===========
