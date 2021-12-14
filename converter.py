@@ -1,3 +1,4 @@
+import gzip
 import json
 import sys
 from concurrent.futures import ProcessPoolExecutor, wait
@@ -111,11 +112,20 @@ def c_simplify_performance(df: pd.DataFrame) -> [dict]:
     return items
 
 
-def process_one_file(filename: str, converter, stdout: bool = False):
+def data_file_size(data: dict, compress: bool = False) -> int:
+    dump = json.dumps(data, ensure_ascii=False)
+    if compress:
+        dump = gzip.compress(dump.encode("utf-8"), compresslevel=3)
+    return len(dump)
+
+
+def process_one_file(
+    filename: str, converter, stdout: bool = False, compress: bool = False
+):
     reader = C5Reader()
     with open(filename, "r") as infile:
         data = json.load(infile)
-    orig_size = len(json.dumps(data))
+    orig_size = data_file_size(data, compress=compress)
     orig_mem = total_size(data)
 
     header, df = reader.json_to_header_and_df(data)
@@ -124,14 +134,14 @@ def process_one_file(filename: str, converter, stdout: bool = False):
     new_items = converter(df)
 
     out = {"Report_Header": header, "Report_Items": new_items}
-    dump = json.dumps(out, ensure_ascii=False)
-    ratio = len(dump) / orig_size
+    new_size = data_file_size(out, compress=compress)
+    ratio = new_size / orig_size
 
     new_mem = total_size(out)
     ratio_mem = new_mem / orig_mem
     print(
-        f"{filename[:14]:14s} |{months:7d} |{orig_size:13d} |{len(dump):13d} |{ratio:-13.4f} |{orig_mem:13d} |{new_mem:13d} | "
-        f"{ratio_mem:-12.4f}",
+        f"{filename[:14]:14s} |{months:7d} |{orig_size:13d} |{new_size:13d} |{ratio:-13.4f} |"
+        f"{orig_mem:13d} |{new_mem:13d} | {ratio_mem:-12.4f}",
         file=sys.stderr,
     )
 
@@ -142,7 +152,9 @@ def process_one_file(filename: str, converter, stdout: bool = False):
 if __name__ == "__main__":
     import argparse
 
-    converters = [(k[2:], v) for k, v in locals().items() if k.startswith('c_') and callable(v)]
+    converters = [
+        (k[2:], v) for k, v in locals().items() if k.startswith("c_") and callable(v)
+    ]
     converters.sort()
 
     parser = argparse.ArgumentParser()
@@ -164,6 +176,12 @@ if __name__ == "__main__":
         default=2,
         type=int,
         help="Number of parallel processes to start = number of input files processed in parallel.",
+    )
+    parser.add_argument(
+        "-z",
+        dest="compress",
+        action="store_true",
+        help="Report gzip compressed file sizes rather than normal",
     )
 
     args = parser.parse_args()
@@ -189,6 +207,7 @@ if __name__ == "__main__":
                 filename,
                 convert_fn,
                 stdout=args.stdout,
+                compress=args.compress,
             )
         )
     done = set()
